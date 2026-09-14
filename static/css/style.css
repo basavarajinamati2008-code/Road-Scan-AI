@@ -1,0 +1,232 @@
+/* 
+   RoadScan AI - Enterprise Aerial Road Monitoring System
+   Custom HUD Styling & High-Tech Infrastructure Dashboard 
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --color-primary: #0284c7;
+  --color-primary-glow: rgba(2, 132, 199, 0.35);
+  --color-accent: #38bdf8;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+  --bg-dark: #090d16;
+  --bg-card: #0f172a;
+  --bg-card-hover: #1e293b;
+  --border-slate: #1e293b;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-dark);
+  color: #f1f5f9;
+  overflow-x: hidden;
+}
+
+code, .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Glassmorphism Cards */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.glass-panel-hover:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15);
+  transition: all 0.25s ease-in-out;
+}
+
+/* Neon Glow Accents */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+}
+
+/* Pulse animation */
+@keyframes radar-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 0.3; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.radar-ping {
+  animation: radar-pulse 3s infinite ease-in-out;
+}
+
+/* Interactive Canvas Bounding Box Overlays */
+.inspection-canvas-container {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  border-radius: 0.75rem;
+  background-color: #020617;
+}
+
+.ai-overlay-box {
+  position: absolute;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  border-radius: 2px;
+  z-index: 10;
+}
+
+.ai-overlay-box:hover, .ai-overlay-box.active {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 25px rgba(56, 189, 248, 0.7);
+  z-index: 25;
+}
+
+.ai-overlay-box.severity-HIGH {
+  border: 2px solid #ef4444;
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+.ai-overlay-box.severity-MEDIUM {
+  border: 2px solid #f59e0b;
+  background-color: rgba(245, 158, 11, 0.2);
+}
+
+.ai-overlay-box.severity-LOW {
+  border: 2px solid #38bdf8;
+  background-color: rgba(56, 189, 248, 0.2);
+}
+
+.ai-box-label {
+  position: absolute;
+  top: -24px;
+  left: -2px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  border-radius: 3px 3px 0 0;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+}
+
+.ai-overlay-box.severity-HIGH .ai-box-label {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.ai-overlay-box.severity-MEDIUM .ai-box-label {
+  background-color: #f59e0b;
+  color: #000000;
+}
+
+.ai-overlay-box.severity-LOW .ai-box-label {
+  background-color: #0284c7;
+  color: #ffffff;
+}
+
+/* Radar Scan Line Animation */
+@keyframes scan-vertical {
+  0% { top: 0%; opacity: 0.2; }
+  50% { opacity: 0.9; }
+  100% { top: 100%; opacity: 0.2; }
+}
+
+.scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+  box-shadow: 0 0 15px #38bdf8;
+  pointer-events: none;
+  animation: scan-vertical 2.5s infinite linear;
+}
+
+/* Custom Status Pills */
+.badge-high {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.badge-medium {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.badge-low {
+  background-color: rgba(56, 189, 248, 0.15);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.badge-good {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+/* Leaflet Map overrides for dark theme */
+.leaflet-container {
+  background: #090d16 !important;
+  border-radius: 0.75rem;
+}
+.leaflet-popup-content-wrapper {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+}
+.leaflet-popup-tip {
+  background: #0f172a !important;
+}
+
+/* Printable Report Styles */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+  }
+  .print-page {
+    page-break-after: always;
+  }
+}

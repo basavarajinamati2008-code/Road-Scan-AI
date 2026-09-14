@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}Inspection Reports - RoadScan AI{% endblock %}
+{% block page_title %}Quality Audit &amp; Engineering Reports{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-white tracking-tight">Highway Inspection Reports</h1>
+            <p class="text-sm text-slate-400 mt-1">Official aerial UAV quality compliance audits and defect inventories</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="document.getElementById('new-report-modal').classList.remove('hidden'); document.getElementById('new-report-modal').classList.add('flex');" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold text-sm shadow-md shadow-sky-500/20 transition-all">
+                <i data-lucide="file-plus" class="w-4 h-4"></i>
+                <span>Compile New Report</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Reports Repository Table / List -->
+    <div class="glass-panel rounded-2xl p-6 border border-slate-800">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="text-slate-400 border-b border-slate-800 font-mono">
+                        <th class="pb-3 font-medium">REPORT ID / TITLE</th>
+                        <th class="pb-3 font-medium">CORRIDOR / PROJECT</th>
+                        <th class="pb-3 font-medium">DATE</th>
+                        <th class="pb-3 font-medium">PROGRESS</th>
+                        <th class="pb-3 font-medium">CONDITION</th>
+                        <th class="pb-3 font-medium">STATUS</th>
+                        <th class="pb-3 font-medium text-right">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% for rep in reports %}
+                    <tr class="hover:bg-slate-800/30 transition-colors">
+                        <td class="py-3.5">
+                            <div class="font-bold text-white text-sm">{{ rep.report_title }}</div>
+                            <div class="text-[11px] font-mono text-slate-400 mt-0.5">ID: {{ rep.id }} &bull; Audited by: {{ rep.inspector_name }}</div>
+                        </td>
+                        <td class="py-3.5 font-medium text-slate-300">
+                            {{ rep.project_name }}
+                        </td>
+                        <td class="py-3.5 font-mono text-slate-400">
+                            {{ rep.generated_at }}
+                        </td>
+                        <td class="py-3.5">
+                            <span class="font-bold font-mono text-sky-400">{{ rep.progress_pct }}%</span>
+                        </td>
+                        <td class="py-3.5">
+                            <span class="font-medium {% if rep.overall_condition == 'Good' %}text-emerald-400{% elif rep.overall_condition == 'Fair' %}text-amber-400{% else %}text-rose-400{% endif %}">
+                                {{ rep.overall_condition }}
+                            </span>
+                        </td>
+                        <td class="py-3.5">
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                {{ rep.status }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 text-right space-x-2">
+                            <button onclick="viewReportDetails('{{ rep.id }}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-sky-500 text-slate-200 hover:text-white transition-colors font-medium">
+                                View Report
+                            </button>
+                            <button onclick="viewReportDetails('{{ rep.id }}', true)" class="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500 text-sky-300 hover:text-white border border-sky-500/30 transition-colors font-medium inline-flex items-center gap-1">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>PDF</span>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= Full Screen Printable Report Modal ================= -->
+<div id="report-view-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div class="max-w-4xl w-full bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
+        
+        <!-- Modal Top Bar -->
+        <div class="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between no-print">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-mono text-sky-400 font-bold uppercase">Official Engineering Audit</span>
+                <span class="text-slate-600">|</span>
+                <span id="modal-report-id" class="text-xs font-mono text-slate-400">REP-000</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button id="print-report-btn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span>Print</span>
+                </button>
+                <button id="download-pdf-btn" class="px-4 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold shadow-md shadow-sky-500/20 flex items-center gap-1.5">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Download PDF Report</span>
+                </button>
+                <button onclick="document.getElementById('report-view-modal').classList.add('hidden'); document.getElementById('report-view-modal').classList.remove('flex');" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Scrollable Report Paper Container -->
+        <div class="p-6 md:p-10 overflow-y-auto bg-slate-900" id="printable-report-wrapper">
+            
+            <div id="printable-report-card" class="bg-slate-950 text-slate-100 p-8 rounded-xl border border-slate-800 max-w-3xl mx-auto space-y-6 shadow-2xl">
+                
+                <!-- Report Header with RoadScan AI Logo -->
+                <div class="border-b-2 border-sky-500 pb-5 flex items-start justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 p-2.5 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" class="w-full h-full">
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-extrabold tracking-tight text-white">RoadScan <span class="text-sky-400">AI</span></h2>
+                            <p class="text-[11px] font-mono tracking-wider text-slate-400 uppercase">Automated Aerial Road Monitoring System</p>
+                        </div>
+                    </div>
+                    <div class="text-right text-xs">
+                        <div class="font-bold text-white" id="rep-authority">NHAI &amp; State PWD Quality Assurance</div>
+                        <div class="text-slate-400 font-mono mt-0.5" id="rep-date">2026-09-14</div>
+                        <div class="text-[10px] font-mono text-emerald-400 mt-1 uppercase font-semibold">STATUS: CERTIFIED AUDIT</div>
+                    </div>
+                </div>
+
+                <!-- Report Title & Project Info -->
+                <div class="space-y-1">
+                    <h1 class="text-xl font-extrabold text-white" id="rep-title">Bi-Weekly Aerial Infrastructure Quality Audit</h1>
+                    <p class="text-xs text-slate-400" id="rep-location">Location: NH-169 Highway Corridor, Karnataka, India</p>
+                </div>
+
+                <!-- Project Metadata Matrix -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-mono">Project Name:</span>
+                        <div class="font-bold text-slate-200 mt-0.5" id="rep-project-name">NH-169 Road Development</div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-mono">Construction Progress:</span>
+                        <div class="font-bold text-sky-400 font-mono mt-0.5" id="rep-progress">72.0% (8.64 / 12.0 km)</div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-mono">Overall Road Condition:</span>
+                        <div class="font-bold text-amber-400 mt-0.5" id="rep-condition">Fair (Health: 78/100)</div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-mono">Lead Auditor:</span>
+                        <div class="font-bold text-slate-200 mt-0.5" id="rep-inspector">Er. S. Nair, M.Tech</div>
+                    </div>
+                </div>
+
+                <!-- Aerial Survey Image -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+                        <span class="text-slate-300 font-semibold uppercase">High-Resolution Aerial Orthophoto</span>
+                        <span id="rep-telemetry-alt">DJI Matrice 300 RTK &bull; 48.5m AGL</span>
+                    </div>
+                    <div class="rounded-xl overflow-hidden border border-slate-700 bg-black max-h-[300px] flex items-center justify-center">
+                        <img id="rep-drone-img" src="/static/images/drone_road_aerial_1.svg" alt="Aerial Image" class="w-full h-auto object-contain max-h-[300px]">
+                    </div>
+                </div>
+
+                <!-- Detected Issues Table -->
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">
+                        Identified Pavement Defects &amp; Incomplete Sections
+                    </h3>
+                    <table class="w-full text-left text-xs border border-slate-800 rounded-lg overflow-hidden">
+                        <thead class="bg-slate-900 text-slate-400 font-mono text-[11px]">
+                            <tr>
+                                <th class="p-2.5">DEFECT TYPE</th>
+                                <th class="p-2.5">CHAINAGE</th>
+                                <th class="p-2.5">SEVERITY</th>
+                                <th class="p-2.5">CONFIDENCE</th>
+                                <th class="p-2.5">ESTIMATED IMPACT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rep-defect-table-body" class="divide-y divide-slate-800 text-[11px]">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Engineering Recommendations -->
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">
+                        Engineering Directives &amp; Corrective Action Plan
+                    </h3>
+                    <ul id="rep-recommendations-list" class="space-y-1.5 text-xs text-slate-300">
+                        <!-- Dynamic items -->
+                    </ul>
+                </div>
+
+                <!-- Official Sign-off Section -->
+                <div class="pt-6 border-t border-slate-800 grid grid-cols-2 gap-6 text-xs">
+                    <div>
+                        <span class="text-[10px] uppercase font-mono text-slate-400">Quality Assurance Officer:</span>
+                        <div class="font-bold text-slate-200 mt-1">Er. S. Nair, M.Tech (Highway Engg.)</div>
+                        <div class="text-[10px] text-slate-500 font-mono">Chief Monitoring Engineer, PWD/NHAI Cell</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] uppercase font-mono text-slate-400">Digital Authentication:</span>
+                        <div class="text-[10px] font-mono text-emerald-400 mt-1">SHA256: 7f8b92c4...e10a8c2</div>
+                        <div class="text-[10px] text-slate-500 font-mono">RoadScan AI Automated Audit Pass</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= Modal to Compile New Report ================= -->
+<div id="new-report-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full rounded-2xl border border-slate-700 p-6 shadow-2xl relative">
+        <button onclick="document.getElementById('new-report-modal').classList.add('hidden'); document.getElementById('new-report-modal').classList.remove('flex');" class="absolute top-5 right-5 text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <h3 class="text-base font-bold text-white mb-1">Generate Inspection Audit Report</h3>
+        <p class="text-xs text-slate-400 mb-4">Select a completed aerial UAV flight to compile an official compliance report.</p>
+
+        <form id="generate-report-form" class="space-y-3 text-xs">
+            <div>
+                <label class="block text-slate-300 font-medium mb-1">Select Aerial Inspection</label>
+                <select id="report-inspection-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-sky-500">
+                    {% for insp in inspections %}
+                    <option value="{{ insp.id }}">
+                        {{ insp.date }} &bull; {{ insp.project_name }} ({{ insp.progress_pct }}%)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-slate-300 font-medium mb-1">Report Title</label>
+                <input type="text" id="report-custom-title" placeholder="e.g. Bi-Weekly Quality Compliance Audit" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-sky-500">
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-end gap-3">
+                <button type="button" onclick="document.getElementById('new-report-modal').classList.add('hidden'); document.getElementById('new-report-modal').classList.remove('flex');" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Cancel</button>
+                <button type="submit" class="px-5 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-semibold">Generate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const reportsList = {{ reports|tojson }};
+    const inspectionsList = {{ inspections|tojson }};
+
+    function viewReportDetails(reportId, autoDownload = false) {
+        const report = reportsList.find(r => r.id === reportId);
+        if (!report) return;
+
+        const inspection = report.inspection_data || inspectionsList.find(i => i.id === report.inspection_id) || inspectionsList[0];
+
+        document.getElementById('modal-report-id').textContent = report.id;
+        document.getElementById('rep-title').textContent = report.report_title;
+        document.getElementById('rep-project-name').textContent = report.project_name;
+        document.getElementById('rep-date').textContent = report.generated_at;
+        document.getElementById('rep-progress').textContent = `${report.progress_pct}% (${report.completed_km} / ${report.completed_km + report.remaining_km} km)`;
+        document.getElementById('rep-condition').textContent = `${report.overall_condition}`;
+        document.getElementById('rep-inspector').textContent = report.inspector_name;
+
+        if (inspection) {
+            document.getElementById('rep-drone-img').src = inspection.media_url;
+
+            // Render defect table
+            const tbody = document.getElementById('rep-defect-table-body');
+            tbody.innerHTML = '';
+            (inspection.detected_issues || []).forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold text-slate-200">${d.label}</td>
+                    <td class="p-2.5 font-mono text-sky-400">${d.chainage}</td>
+                    <td class="p-2.5"><span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold ${d.severity === 'HIGH' ? 'badge-high' : d.severity === 'MEDIUM' ? 'badge-medium' : 'badge-low'}">${d.severity}</span></td>
+                    <td class="p-2.5 font-mono">${(d.confidence * 100).toFixed(0)}%</td>
+                    <td class="p-2.5 text-slate-400">${d.description}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Render recommendations
+            const recList = document.getElementById('rep-recommendations-list');
+            recList.innerHTML = '';
+            (inspection.recommendations || []).forEach(r => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start gap-2';
+                li.innerHTML = `<span class="text-sky-400">▪</span> <span>${r}</span>`;
+                recList.appendChild(li);
+            });
+        }
+
+        const modal = document.getElementById('report-view-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        if (autoDownload) {
+            setTimeout(() => {
+                document.getElementById('download-pdf-btn').click();
+            }, 300);
+        }
+    }
+
+    // Modal form submission to generate report
+    document.getElementById('generate-report-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const inspectionId = document.getElementById('report-inspection-select').value;
+        const title = document.getElementById('report-custom-title').value;
+
+        try {
+            const res = await fetch('/api/reports/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inspection_id: inspectionId, title: title })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to generate report');
+            }
+        } catch (err) {
+            console.error('Error generating report:', err);
+        }
+    });
+</script>
+{% endblock %}

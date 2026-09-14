@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - RoadScan AI{% endblock %}
+{% block page_title %}Operational Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- ================= Top Project Banner Card ================= -->
+    <div class="glass-panel rounded-2xl p-6 relative overflow-hidden border border-slate-800">
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-mono font-semibold">
+                        {{ active_project.corridor_code }}
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        {{ active_project.status }}
+                    </span>
+                </div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+                    {{ active_project.name }}
+                </h1>
+                <p class="text-slate-400 text-sm mt-1 flex items-center gap-2">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-slate-500"></i>
+                    {{ active_project.location }} &bull;
+                    <span class="text-slate-300 font-medium">Contractor: {{ active_project.contractor }}</span>
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('upload_page') }}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-sky-500/25 transition-all">
+                    <i data-lucide="scan" class="w-4 h-4"></i>
+                    <span>Launch AI Analysis</span>
+                </a>
+                <a href="{{ url_for('reports_page') }}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm border border-slate-700 transition-all">
+                    <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i>
+                    <span>Audit Reports ({{ reports_count }})</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Progress Bar Strip -->
+        <div class="mt-6 pt-6 border-t border-slate-800/80">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400 mb-2">
+                <span class="flex items-center gap-2 text-slate-300 font-medium">
+                    <i data-lucide="activity" class="w-4 h-4 text-sky-400"></i> Overall Road Construction Progress
+                </span>
+                <span class="text-sky-400 font-bold text-sm">{{ active_project.progress_pct }}% Completed</span>
+            </div>
+            <div class="w-full h-3.5 bg-slate-800/90 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                <div class="h-full bg-gradient-to-r from-sky-500 via-blue-500 to-emerald-400 rounded-full transition-all duration-1000" style="width: {{ active_project.progress_pct }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 6 Core KPI Metric Cards ================= -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- Progress -->
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Progress</span>
+            <div class="mt-2 text-2xl font-extrabold text-sky-400 font-mono">
+                {{ active_project.progress_pct }}%
+            </div>
+            <span class="text-[11px] text-slate-500 mt-1">Target: 70%</span>
+        </div>
+
+        <!-- Completed Road -->
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Completed</span>
+            <div class="mt-2 text-2xl font-extrabold text-emerald-400 font-mono">
+                {{ active_project.completed_km }} <span class="text-xs font-normal text-slate-400">km</span>
+            </div>
+            <span class="text-[11px] text-slate-500 mt-1">Bituminous Paved</span>
+        </div>
+
+        <!-- Remaining Road -->
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Remaining</span>
+            <div class="mt-2 text-2xl font-extrabold text-amber-400 font-mono">
+                {{ active_project.remaining_km }} <span class="text-xs font-normal text-slate-400">km</span>
+            </div>
+            <span class="text-[11px] text-slate-500 mt-1">Sub-base / Grading</span>
+        </div>
+
+        <!-- Total Inspections -->
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Inspections</span>
+            <div class="mt-2 text-2xl font-extrabold text-white font-mono">
+                {{ active_project.total_inspections }}
+            </div>
+            <span class="text-[11px] text-slate-500 mt-1">UAV Survey Missions</span>
+        </div>
+
+        <!-- Detected Issues -->
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Detected Issues</span>
+            <div class="mt-2 text-2xl font-extrabold text-rose-400 font-mono">
+                {{ active_project.open_issues }}
+            </div>
+            <span class="text-[11px] text-rose-400/80 mt-1 font-medium">2 Critical Potholes</span>
+        </div>
+
+        <!-- Overall Condition -->
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Condition</span>
+            <div class="mt-2 text-2xl font-extrabold font-mono {% if active_project.overall_condition == 'Good' %}text-emerald-400{% elif active_project.overall_condition == 'Fair' %}text-amber-400{% else %}text-rose-400{% endif %}">
+                {{ active_project.overall_condition }}
+            </div>
+            <span class="text-[11px] text-slate-500 mt-1">Health: 78 / 100</span>
+        </div>
+    </div>
+
+    <!-- ================= Middle Visual Section: GIS Corridor Map & Defect Breakdown ================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Leaflet Map Section (2 cols) -->
+        <div class="lg:col-span-2 glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="compass" class="w-4 h-4 text-sky-400"></i> Aerial Corridor GIS Mapping
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Live survey coordinates &amp; chainage alignment (Karnataka, India)</p>
+                </div>
+                <div class="flex items-center gap-3 text-xs font-mono">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Paved</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Unpaved</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Defect Hotspot</span>
+                </div>
+            </div>
+            <!-- Map Element Container -->
+            <div id="corridor-map" class="w-full h-80 rounded-xl overflow-hidden border border-slate-700/60 shadow-inner"></div>
+        </div>
+
+        <!-- Issue Breakdown Chart (1 col) -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="pie-chart" class="w-4 h-4 text-sky-400"></i> Surface Defect Breakdown
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">Distribution of detected pavement distress</p>
+            </div>
+            <div class="h-64 my-2 relative">
+                <canvas id="defects-chart"></canvas>
+            </div>
+            <div class="pt-3 border-t border-slate-800/80 grid grid-cols-3 text-center text-xs">
+                <div>
+                    <div class="text-rose-400 font-bold font-mono text-base">2</div>
+                    <div class="text-[10px] text-slate-400 uppercase">Potholes</div>
+                </div>
+                <div>
+                    <div class="text-amber-400 font-bold font-mono text-base">3</div>
+                    <div class="text-[10px] text-slate-400 uppercase">Cracks</div>
+                </div>
+                <div>
+                    <div class="text-sky-400 font-bold font-mono text-base">2</div>
+                    <div class="text-[10px] text-slate-400 uppercase">Incomplete</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Bottom Section: Progress Timeline Chart & Recent Inspections ================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Progress Chart (5 cols) -->
+        <div class="lg:col-span-5 glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-sky-400"></i> Construction Progress Velocity
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Actual vs. scheduled road completion timeline</p>
+                </div>
+            </div>
+            <div class="h-64 w-full relative">
+                <canvas id="progress-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Inspection History Table (7 cols) -->
+        <div class="lg:col-span-7 glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="history" class="w-4 h-4 text-sky-400"></i> Recent Aerial Inspections
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Logged drone flights and AI distress assessments</p>
+                </div>
+                <a href="{{ url_for('upload_page') }}" class="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1">
+                    Upload New <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-800 font-mono">
+                            <th class="pb-2.5 font-medium">DATE / FLIGHT</th>
+                            <th class="pb-2.5 font-medium">PREVIEW</th>
+                            <th class="pb-2.5 font-medium">PROGRESS</th>
+                            <th class="pb-2.5 font-medium">DEFECTS</th>
+                            <th class="pb-2.5 font-medium">CONDITION</th>
+                            <th class="pb-2.5 font-medium text-right">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60">
+                        {% for insp in inspections %}
+                        <tr class="hover:bg-slate-800/30 transition-colors group">
+                            <td class="py-3 font-mono text-slate-300">
+                                <div>{{ insp.date }}</div>
+                                <div class="text-[10px] text-slate-500">{{ insp.uav_pilot }}</div>
+                            </td>
+                            <td class="py-3">
+                                <a href="{{ url_for('inspection_detail', inspection_id=insp.id) }}" class="block w-12 h-9 rounded-lg overflow-hidden border border-slate-700 bg-slate-800 relative group-hover:border-sky-400 transition-colors">
+                                    <img src="{{ insp.thumbnail_url }}" alt="Thumbnail" class="w-full h-full object-cover">
+                                </a>
+                            </td>
+                            <td class="py-3">
+                                <div class="font-bold text-sky-400 font-mono">{{ insp.progress_pct }}%</div>
+                                <div class="text-[10px] text-slate-500">{{ insp.completed_km }} / {{ active_project.total_length_km }} km</div>
+                            </td>
+                            <td class="py-3">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-mono font-semibold {% if insp.summary_counts.high_severity > 0 %}badge-high{% else %}badge-good{% endif %}">
+                                    {{ insp.summary_counts.total_issues }} Issues ({{ insp.summary_counts.high_severity }} High)
+                                </span>
+                            </td>
+                            <td class="py-3">
+                                <span class="font-medium {% if insp.overall_condition == 'Good' %}text-emerald-400{% elif insp.overall_condition == 'Fair' %}text-amber-400{% else %}text-rose-400{% endif %}">
+                                    {{ insp.overall_condition }}
+                                </span>
+                            </td>
+                            <td class="py-3 text-right">
+                                <a href="{{ url_for('inspection_detail', inspection_id=insp.id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-sky-500 text-slate-300 hover:text-white transition-all font-medium">
+                                    <span>Inspect</span>
+                                    <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize Leaflet Map and Charts on Dashboard
+    const projectData = {{ active_project|tojson }};
+    const inspectionsData = {{ inspections|tojson }};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initCorridorMap(projectData, inspectionsData);
+        initDashboardCharts(inspectionsData, projectData);
+    });
+</script>
+{% endblock %}

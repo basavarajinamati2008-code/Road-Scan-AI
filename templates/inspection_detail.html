@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Inspection {{ inspection.id }} - RoadScan AI{% endblock %}
+{% block page_title %}Inspection Studio{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Navigation & Action Bar -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2.5 mb-1.5">
+                <a href="{{ url_for('dashboard') }}" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Dashboard
+                </a>
+                <span class="text-slate-600">/</span>
+                <span class="text-xs font-mono text-sky-400 font-semibold">{{ inspection.id }}</span>
+                <span class="px-2 py-0.5 rounded text-[11px] font-mono {% if inspection.overall_condition == 'Good' %}badge-good{% elif inspection.overall_condition == 'Fair' %}badge-medium{% else %}badge-high{% endif %}">
+                    Condition: {{ inspection.overall_condition }}
+                </span>
+            </div>
+            <h1 class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
+                {{ inspection.project_name }} Aerial Survey
+            </h1>
+            <p class="text-xs text-slate-400 mt-1 flex items-center gap-3">
+                <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-500"></i> {{ inspection.date }}</span>
+                <span>&bull;</span>
+                <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5 text-slate-500"></i> Pilot: {{ inspection.uav_pilot }}</span>
+            </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition-colors">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>Print</span>
+            </button>
+            <a href="{{ url_for('reports_page') }}" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold shadow-lg shadow-sky-500/20 flex items-center gap-2 transition-all">
+                <i data-lucide="file-check" class="w-4 h-4"></i>
+                <span>Generate Audit Report</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 KPI Summary Cards for this Inspection -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <span class="text-[11px] font-mono text-slate-400 uppercase">Evaluated Progress</span>
+            <div class="text-2xl font-extrabold text-sky-400 font-mono mt-1">
+                {{ inspection.progress_pct }}%
+            </div>
+            <span class="text-[11px] text-slate-500">{{ inspection.completed_km }} km of {{ active_project.total_length_km }} km</span>
+        </div>
+
+        <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <span class="text-[11px] font-mono text-slate-400 uppercase">Distress Hotspots</span>
+            <div class="text-2xl font-extrabold text-rose-400 font-mono mt-1">
+                {{ inspection.summary_counts.total_issues }} Issues
+            </div>
+            <span class="text-[11px] text-rose-400/80">{{ inspection.summary_counts.high_severity }} High Severity</span>
+        </div>
+
+        <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <span class="text-[11px] font-mono text-slate-400 uppercase">Potholes Identified</span>
+            <div class="text-2xl font-extrabold text-amber-400 font-mono mt-1">
+                {{ inspection.summary_counts.potholes }}
+            </div>
+            <span class="text-[11px] text-slate-500">Cavities / Depressions</span>
+        </div>
+
+        <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <span class="text-[11px] font-mono text-slate-400 uppercase">Structural Health Index</span>
+            <div class="text-2xl font-extrabold text-emerald-400 font-mono mt-1">
+                {{ inspection.health_score }} / 100
+            </div>
+            <span class="text-[11px] text-slate-500">IRC Pavement Rating</span>
+        </div>
+    </div>
+
+    <!-- ================= Main Studio: Drone Canvas + Defect Inspector ================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Interactive Drone Canvas (8 cols) -->
+        <div class="lg:col-span-8 glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col">
+            <!-- Canvas Controls Bar -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-white flex items-center gap-1.5">
+                        <i data-lucide="scan" class="w-4 h-4 text-sky-400"></i> AI Defect Segmentation Overlay
+                    </span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/20 text-sky-300">YOLOv8 DETECTIONS</span>
+                </div>
+
+                <div class="flex items-center gap-4 text-xs">
+                    <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 select-none">
+                        <input type="checkbox" id="toggle-bounding-boxes" checked class="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0">
+                        <span>Bounding Boxes</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 select-none">
+                        <input type="checkbox" id="toggle-scanline" checked class="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0">
+                        <span>Radar Scan</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Interactive Canvas Container -->
+            <div class="inspection-canvas-container relative rounded-xl border border-slate-700 overflow-hidden shadow-2xl bg-black">
+                <!-- Aerial Base Image -->
+                <img id="drone-base-media" src="{{ inspection.media_url }}" alt="Drone Aerial Footage" class="w-full h-auto object-contain select-none block">
+
+                <!-- Dynamic Bounding Box Overlay Layer -->
+                <div id="inspection-canvas-overlay" class="absolute inset-0 pointer-events-auto">
+                    <!-- Boxes rendered by JS -->
+                </div>
+
+                <!-- Animated Radar Scanline -->
+                <div class="scanline"></div>
+            </div>
+
+            <!-- UAV Flight Telemetry Strip -->
+            <div class="mt-4 pt-4 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono text-slate-400">
+                <div>
+                    <span class="text-slate-500 text-[10px] uppercase">Platform:</span>
+                    <div class="text-slate-200 font-semibold text-[11px] truncate">{{ inspection.telemetry.uav_platform }}</div>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] uppercase">Altitude &amp; GSD:</span>
+                    <div class="text-slate-200 font-semibold text-[11px]">{{ inspection.telemetry.flight_altitude_m }}m &bull; {{ inspection.telemetry.ground_sampling_distance_cm_px }} cm/px</div>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] uppercase">Coordinates:</span>
+                    <div class="text-slate-200 font-semibold text-[11px]">{{ inspection.telemetry.coordinates.latitude }}°N, {{ inspection.telemetry.coordinates.longitude }}°E</div>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] uppercase">Camera Shutter:</span>
+                    <div class="text-slate-200 font-semibold text-[11px]">{{ inspection.telemetry.sensor_shutter or '1/1000s, f/4.0' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Defect List & Recommendations (4 cols) -->
+        <div class="lg:col-span-4 space-y-6">
+
+            <!-- Defect List Card -->
+            <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col max-h-[500px]">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> Detected Issues ({{ inspection.detected_issues|length }})
+                    </h3>
+                    <span class="text-[10px] font-mono text-slate-400">Click to locate</span>
+                </div>
+
+                <!-- Severity Filter Tabs -->
+                <div class="flex items-center gap-1.5 mb-3 border-b border-slate-800/80 pb-2.5">
+                    <button data-filter="ALL" class="defect-filter-btn px-2.5 py-1 rounded text-[11px] font-semibold bg-sky-500 text-white border border-sky-400 transition-colors">ALL</button>
+                    <button data-filter="HIGH" class="defect-filter-btn px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">HIGH</button>
+                    <button data-filter="MEDIUM" class="defect-filter-btn px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">MEDIUM</button>
+                    <button data-filter="LOW" class="defect-filter-btn px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">LOW</button>
+                </div>
+
+                <!-- Defect List Items -->
+                <div class="overflow-y-auto space-y-2 pr-1 flex-1">
+                    {% for issue in inspection.detected_issues %}
+                    <div class="defect-list-item p-3 rounded-xl bg-slate-900/60 hover:bg-slate-850 border border-slate-800 cursor-pointer transition-all duration-150" data-id="{{ issue.id }}" data-severity="{{ issue.severity }}">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-mono text-xs font-bold text-white">{{ issue.label }}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold {% if issue.severity == 'HIGH' %}badge-high{% elif issue.severity == 'MEDIUM' %}badge-medium{% else %}badge-low{% endif %}">
+                                {{ issue.severity }}
+                            </span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-1 leading-snug">
+                            {{ issue.description }}
+                        </div>
+                        <div class="mt-2 flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1.5 border-t border-slate-800/60">
+                            <span class="text-sky-400">{{ issue.chainage }}</span>
+                            <span>Conf: {{ (issue.confidence * 100)|round }}%</span>
+                            <span>Area: {{ issue.area_sq_m }} m²</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Engineering Recommendations Card -->
+            <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="wrench" class="w-4 h-4 text-sky-400"></i> AI Engineering Directives
+                </h3>
+                <p class="text-xs text-slate-400">Prescribed corrective interventions per IRC highway specifications:</p>
+                <ul class="space-y-2 text-xs text-slate-300">
+                    {% for rec in inspection.recommendations %}
+                    <li class="flex items-start gap-2 p-2 rounded-lg bg-slate-900/50 border border-slate-800/60">
+                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5"></i>
+                        <span>{{ rec }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Pass inspection issue coordinates to JS canvas renderer
+    window.INSPECTION_ISSUES = {{ inspection.detected_issues|tojson }};
+</script>
+{% endblock %}

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RoadScan AI - Automated Aerial Road Monitoring{% endblock %}</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#0f172a',
+                            900: '#0b1120',
+                            950: '#060913',
+                        },
+                        sky: {
+                            450: '#1e9df7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Leaflet GIS Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- html2pdf.js for client-side PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-slate-950 text-slate-100 flex min-h-screen antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- ================= Sidebar Navigation ================= -->
+    <aside class="w-64 bg-slate-900/90 border-r border-slate-800 flex flex-col fixed inset-y-0 z-30 transition-all duration-300">
+        <!-- Brand Logo Header -->
+        <div class="p-5 border-b border-slate-800/80 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 p-2 shadow-lg shadow-sky-500/20 flex items-center justify-center">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" class="w-full h-full">
+            </div>
+            <div>
+                <h1 class="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                    RoadScan <span class="text-sky-400">AI</span>
+                </h1>
+                <p class="text-[10px] font-mono tracking-widest text-slate-400 uppercase">UAV Aerial Vision</p>
+            </div>
+        </div>
+
+        <!-- Active Project Badge / Quick Switcher -->
+        <div class="p-4 border-b border-slate-800/60 bg-slate-900/40">
+            <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+                <i data-lucide="map-pin" class="w-3 h-3 text-sky-400"></i> Active Corridor
+            </label>
+            <div class="relative">
+                <select id="project-quick-select" class="w-full bg-slate-800/90 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 font-medium focus:outline-none focus:border-sky-500 appearance-none pr-8">
+                    {% for p in projects %}
+                    <option value="{{ p.id }}" {% if active_project and active_project.id == p.id %}selected{% endif %}>
+                        {{ p.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none"></i>
+            </div>
+            {% if active_project %}
+            <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="font-mono">{{ active_project.total_length_km }} km Corridor</span>
+                <span class="text-emerald-400 font-semibold">{{ active_project.progress_pct }}% Complete</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto">
+            <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all {% if request.endpoint == 'dashboard' %}bg-sky-500/15 text-sky-400 border border-sky-500/30 font-semibold{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                <i data-lucide="layout-dashboard" class="w-4 h-4 {% if request.endpoint == 'dashboard' %}text-sky-400{% else %}text-slate-400{% endif %}"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="{{ url_for('projects_page') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all {% if request.endpoint == 'projects_page' %}bg-sky-500/15 text-sky-400 border border-sky-500/30 font-semibold{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                <i data-lucide="folder-kanban" class="w-4 h-4 {% if request.endpoint == 'projects_page' %}text-sky-400{% else %}text-slate-400{% endif %}"></i>
+                <span>Road Projects</span>
+            </a>
+
+            <a href="{{ url_for('upload_page') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all {% if request.endpoint == 'upload_page' %}bg-sky-500/15 text-sky-400 border border-sky-500/30 font-semibold{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                <i data-lucide="cloud-upload" class="w-4 h-4 {% if request.endpoint == 'upload_page' %}text-sky-400{% else %}text-slate-400{% endif %}"></i>
+                <span>Upload Drone Data</span>
+                <span class="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">AI</span>
+            </a>
+
+            <a href="{{ url_for('reports_page') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all {% if request.endpoint == 'reports_page' %}bg-sky-500/15 text-sky-400 border border-sky-500/30 font-semibold{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                <i data-lucide="file-check" class="w-4 h-4 {% if request.endpoint == 'reports_page' %}text-sky-400{% else %}text-slate-400{% endif %}"></i>
+                <span>Inspection Reports</span>
+            </a>
+        </nav>
+
+        <!-- Drone System Status Card in Sidebar -->
+        <div class="p-4 border-t border-slate-800/80 bg-slate-900/60 text-xs">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="font-mono text-slate-300 font-medium">CV Model Pipeline</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed mb-2.5">
+                Simulated AI Engine ready. Future model hook: <span class="font-mono text-sky-400">YOLOv8-Seg</span>
+            </p>
+            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-2 border-t border-slate-800">
+                <span>VER: 2.4.0-DEMO</span>
+                <span class="text-sky-400">DGCA COMPLIANT</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ================= Main Content Viewport ================= -->
+    <div class="flex-1 ml-64 flex flex-col min-w-0">
+
+        <!-- Top Header Bar -->
+        <header class="h-16 bg-slate-900/70 border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-6">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-sm text-slate-400">
+                    <span class="text-slate-500">System</span>
+                    <span>/</span>
+                    <span class="text-slate-200 font-semibold">{% block page_title %}Dashboard{% endblock %}</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- AI Engine Status Pill -->
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/70 text-xs font-mono">
+                    <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                    <span class="text-slate-300">AI Inference:</span>
+                    <span class="text-sky-400 font-semibold">Simulated Aerial CV</span>
+                </div>
+
+                <!-- Fast Action: Upload Drone Flight -->
+                <a href="{{ url_for('upload_page') }}" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-white text-xs font-semibold shadow-md shadow-sky-500/20 transition-all">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span>New Inspection</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Body Page Content -->
+        <main class="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="border-t border-slate-800/80 py-4 px-8 text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div>
+                RoadScan AI &bull; Automated Aerial Road Monitoring System Prototype
+            </div>
+            <div class="font-mono text-[11px] text-slate-400">
+                Department of Civil &amp; Computer Engineering Demonstration
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

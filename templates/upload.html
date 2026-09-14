@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Drone Data - RoadScan AI{% endblock %}
+{% block page_title %}Aerial Data Ingestion &amp; AI Analysis{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="text-center max-w-2xl mx-auto space-y-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-mono">
+            <i data-lucide="drone" class="w-3.5 h-3.5"></i>
+            <span>UAV ORTHOMOSAIC &amp; VIDEO INGESTION</span>
+        </div>
+        <h1 class="text-3xl font-extrabold text-white tracking-tight">Upload Drone Survey Footage</h1>
+        <p class="text-slate-400 text-sm">
+            Ingest aerial drone imagery or 4K UAV video for automated road surface segmentation, defect identification, and progress calculation.
+        </p>
+    </div>
+
+    <!-- Active Target Corridor Card -->
+    <div class="glass-panel p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg bg-sky-500/20 text-sky-400">
+                <i data-lucide="crosshair" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <span class="text-[11px] font-mono text-slate-400 uppercase">Target Project Corridor</span>
+                <div class="text-sm font-bold text-white">{{ active_project.name }} ({{ active_project.location }})</div>
+            </div>
+        </div>
+        <div class="text-right">
+            <span class="text-xs font-mono text-slate-400">Length: <strong class="text-slate-200">{{ active_project.total_length_km }} km</strong></span>
+        </div>
+    </div>
+
+    <!-- Upload Options Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left: Drag and Drop Upload Area (7 cols) -->
+        <div class="lg:col-span-7 space-y-4">
+            <div id="upload-dropzone" class="border-2 border-dashed border-slate-700 hover:border-sky-400 bg-slate-900/50 hover:bg-slate-900/80 rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center min-h-[280px]">
+                <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.mp4,.svg" class="hidden">
+                
+                <div class="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-4 shadow-lg shadow-sky-500/10">
+                    <i data-lucide="cloud-upload" class="w-8 h-8"></i>
+                </div>
+
+                <h3 class="text-base font-bold text-white mb-1">Drag &amp; Drop Aerial Survey Files</h3>
+                <p class="text-xs text-slate-400 max-w-sm mb-4">
+                    Supports high-resolution UAV orthophotos and flight videos: <br>
+                    <span class="font-mono text-sky-400">JPG, PNG, MP4</span> (Max 64MB)
+                </p>
+
+                <button type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs border border-slate-700 transition-colors pointer-events-none">
+                    Browse Computer Files
+                </button>
+            </div>
+
+            <!-- Upload Guidelines info -->
+            <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800/80 text-xs text-slate-400 flex items-start gap-3">
+                <i data-lucide="info" class="w-4 h-4 text-sky-400 shrink-0 mt-0.5"></i>
+                <div>
+                    <strong class="text-slate-300">Aerial Survey Standard:</strong> For optimal defect detection, upload imagery captured at 35m–60m AGL with minimum 70% forward overlap and ground sampling distance (GSD) &le; 2.0 cm/px.
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: 1-Click Preset Sample Aerial Footage (5 cols) -->
+        <div class="lg:col-span-5 space-y-3">
+            <div class="flex items-center justify-between mb-1">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-sky-400"></i> Or Select Preset Demo Imagery
+                </h3>
+                <span class="text-[10px] font-mono text-slate-500">1-CLICK TEST</span>
+            </div>
+            <p class="text-xs text-slate-400">
+                Instantly evaluate the AI engine using verified high-resolution aerial datasets from NH-169:
+            </p>
+
+            <div class="space-y-3">
+                {% for sample in sample_images %}
+                <div class="sample-dataset-card glass-panel rounded-xl p-3 border border-slate-800 hover:border-sky-400/80 cursor-pointer transition-all duration-200 group flex items-center gap-3" data-url="{{ sample.url }}" data-name="{{ sample.name }}">
+                    <div class="w-16 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-800 shrink-0 relative group-hover:border-sky-400">
+                        <img src="{{ sample.url }}" alt="{{ sample.name }}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-xs font-bold text-slate-200 group-hover:text-sky-300 truncate">
+                            {{ sample.name }}
+                        </div>
+                        <p class="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                            {{ sample.desc }}
+                        </p>
+                    </div>
+                    <i data-lucide="check-circle" class="w-4 h-4 text-slate-600 group-hover:text-sky-400 shrink-0"></i>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= Selected Media Preview & Analysis Action ================= -->
+    <div id="media-preview-container" class="hidden glass-panel rounded-2xl p-6 border border-slate-800 transition-all space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Selected Aerial Media for Inspection</h3>
+                    <div class="flex items-center gap-3 text-xs text-slate-400 font-mono mt-0.5">
+                        <span id="preview-filename" class="text-slate-300 font-semibold">filename.jpg</span>
+                        <span id="preview-filesize" class="text-slate-500">0.0 MB</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analyze with AI Button -->
+            <button id="analyze-btn" disabled class="flex items-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-sky-500/30 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i data-lucide="sparkles" class="w-4 h-4 text-sky-200 animate-pulse"></i>
+                <span>Analyze with AI</span>
+            </button>
+        </div>
+
+        <!-- Preview Viewport -->
+        <div class="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 max-h-[460px] flex items-center justify-center">
+            <img id="preview-image" src="" alt="Drone Survey Preview" class="w-full h-auto object-contain max-h-[460px]">
+            <video id="preview-video" controls class="hidden w-full max-h-[460px]"></video>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= Staged AI Inference Animation Modal ================= -->
+<div id="analysis-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="glass-panel max-w-xl w-full rounded-2xl border border-sky-500/40 p-8 shadow-2xl relative space-y-6">
+        
+        <div class="text-center space-y-2">
+            <div class="w-16 h-16 rounded-2xl bg-sky-500/20 border border-sky-500/40 mx-auto flex items-center justify-center text-sky-400 shadow-lg shadow-sky-500/20 relative">
+                <i data-lucide="scan-eye" class="w-8 h-8 animate-pulse"></i>
+                <div class="absolute inset-0 rounded-2xl border border-sky-400 radar-ping"></div>
+            </div>
+            <h3 class="text-xl font-extrabold text-white tracking-tight">Autonomous Road Inspection AI</h3>
+            <p id="analysis-status-text" class="text-sm font-medium text-sky-300">
+                Initializing neural vision pipeline...
+            </p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+                <span>INFERENCE PROGRESS</span>
+                <span id="analysis-percent-text" class="text-sky-400 font-bold">0%</span>
+            </div>
+            <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+                <div id="analysis-progress-bar" class="h-full bg-gradient-to-r from-sky-500 via-blue-500 to-emerald-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Live Terminal Stream Logs -->
+        <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs">
+            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Neural Telemetry Stream</span>
+                <span class="text-emerald-400 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> PROCESSING
+                </span>
+            </div>
+            <div id="analysis-console-logs" class="h-32 overflow-y-auto space-y-1 pr-1">
+                <!-- Log steps appended via JS -->
+            </div>
+        </div>
+
+        <p class="text-[11px] text-center text-slate-500">
+            Simulating deep learning aerial orthomosaic defect detection &amp; chainage progress evaluation.
+        </p>
+    </div>
+</div>
+{% endblock %}

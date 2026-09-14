@@ -1,0 +1,19 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.env
+
+# Flask instance
+instance/
+.webassets-cache
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp

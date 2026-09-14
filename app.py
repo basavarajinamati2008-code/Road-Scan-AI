@@ -257,10 +257,8 @@ def api_get_report(report_id):
     return jsonify({"status": "error", "message": "Report not found"}), 404
 
 
-if __name__ == '__main__':
-    print("==================================================================")
-    print(" RoadScan AI - Automated Aerial Road Monitoring System")
-    print(" Running at http://127.0.0.1:5000")
-    print(" Active Project: NH-169 Road Development (Karnataka, India)")
-    print("==================================================================")
-    app.run(host='127.0.0.1', port=5000, debug=True)
+if __if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+

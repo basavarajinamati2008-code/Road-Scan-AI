@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # RoadScan AI – Automated Aerial Road Monitoring System
 
 > **College Project Prototype / Technical Demonstration**  
@@ -144,3 +145,6 @@ $$\text{Drone Footage (JPG/MP4)} \longrightarrow \text{Orthorectification} \long
    analyzer = get_analyzer(mode="production_cv")
    ```
    The entire frontend, dashboard, interactive bounding box canvas, and PDF generator will immediately use the real model outputs with **zero UI code changes required**.
+=======
+# Road-Scan-AI 
+>>>>>>> 589c418a4a3bacdef89ad7ec118a21da5e3c7387
